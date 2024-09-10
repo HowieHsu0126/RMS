@@ -70,7 +70,7 @@ paper_fetcher_project/
 首先，克隆此项目到本地：
 
 ```bash
-git clone https://gitee.com/Howie0126/paper-crawler.git
+git clone https://github.com/HowieHsu0126/RMS.git
 cd paper_fetcher_project
 ```
 
@@ -137,6 +137,10 @@ pip install pytest
 pytest tests/
 ```
 
+## 日志和调试
+
+项目使用 Python 内置的 `logging` 模块进行日志记录。默认日志输出到控制台。可以通过修改 `paper_fetcher/utils.py` 文件来配置日志级别。
+
 ## 项目贡献
 
 欢迎任何形式的贡献！请确保在贡献代码前遵循以下指南：
@@ -145,24 +149,6 @@ pytest tests/
 2. **编写清晰、可读的代码**，确保符合 PEP8 代码风格。
 3. **编写测试**：所有新功能或改动都应包含适当的测试。
 4. 提交 Pull Request。
-
-### 开发环境设置
-
-1. 克隆仓库：
-
-   ```bash
-   git clone https://gitee.com/Howie0126/paper-crawler.git
-   cd paper_fetcher_project
-   ```
-2. 安装开发依赖：
-
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-## 日志和调试
-
-项目使用 Python 内置的 `logging` 模块进行日志记录。默认日志输出到控制台。可以通过修改 `paper_fetcher/utils.py` 文件来配置日志级别。
 
 ## 许可证
 
