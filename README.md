@@ -4,6 +4,11 @@
 >
 > Email: haoweixu0126@163.com
 
+
+
+> ⚠️ 提示：在中国大陆运行该项目时，某些学术资源（如 Google Scholar）可能需要通过 VPN 才能正常访问。请确保您已配置 VPN 以避免网络访问限制。
+
+
 ## 项目简介
 
 **Paper Fetcher Project** 是一个 Python 项目，旨在从多个学术资源（例如 ArXiv、Google Scholar 和 PubMed）抓取学术论文，并提供灵活的定制选项。该项目支持定时抓取、去重机制，并可扩展至更多学术数据库。它可以作为科研工作者自动化收集学术资源的工具。
