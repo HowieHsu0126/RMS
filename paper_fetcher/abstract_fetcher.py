@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from filelock import FileLock
 import sys  # For returning exit codes
 
+
 class AbstractPaperFetcher(ABC):
     """
     Abstract base class for fetching academic papers. Provides common functionality such as:
@@ -49,7 +50,7 @@ class AbstractPaperFetcher(ABC):
     def _save_to_json(self, data):
         """
         Saves provided data to a JSON file, ensuring file locking.
-        
+
         Args:
             data (list): List of papers to be saved. Each paper should have unique identifiers for deduplication.
         """
@@ -61,7 +62,8 @@ class AbstractPaperFetcher(ABC):
             existing_data.extend(data)
             data_to_write = existing_data
 
-        self.paper_ids.update(paper.get('doi') or paper.get('url') for paper in data)
+        self.paper_ids.update(paper.get('doi') or paper.get('url')
+                              for paper in data)
 
         with FileLock(f"{self.json_file_path}.lock"):
             with open(self.json_file_path, 'w', encoding='utf-8') as f:
@@ -72,7 +74,7 @@ class AbstractPaperFetcher(ABC):
     def fetch_by_keywords(self, search_params=None, max_results=10):
         """
         Fetches papers based on search parameters, filters out duplicates, and saves new papers.
-        
+
         Args:
             search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
             max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
@@ -80,10 +82,12 @@ class AbstractPaperFetcher(ABC):
         Returns:
             int: Number of newly saved papers.
         """
-        logging.info("Fetching papers with parameters..." if search_params else "Fetching latest papers...")
+        logging.info(
+            "Fetching papers with parameters..." if search_params else "Fetching latest papers...")
 
         papers = self.fetch_papers(search_params, max_results)
-        new_papers = [paper for paper in papers if paper.get('doi') not in self.paper_ids and paper.get('url') not in self.paper_ids]
+        new_papers = [paper for paper in papers if paper.get(
+            'doi') not in self.paper_ids and paper.get('url') not in self.paper_ids]
 
         if new_papers:
             self._save_to_json(new_papers)
@@ -96,7 +100,7 @@ class AbstractPaperFetcher(ABC):
         """
         Main entry point for running the paper fetch operation. 
         Provides success or failure status codes for external monitoring.
-        
+
         Args:
             search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
             max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
@@ -114,11 +118,11 @@ class AbstractPaperFetcher(ABC):
         """
         Abstract method to fetch papers based on search parameters. 
         Must be implemented by subclasses.
-        
+
         Args:
             search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
             max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
-        
+
         Returns:
             list: List of fetched papers.
         """
