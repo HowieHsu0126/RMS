@@ -1,112 +1,125 @@
-# paper_fetcher/abstract_fetcher.py
 import json
 import logging
 import os
 import random
 import time
-from abc import ABC, abstractmethod  # 导入 ABC 和 abstractmethod
-
-import schedule
-
+from abc import ABC, abstractmethod
+from filelock import FileLock
+import sys  # For returning exit codes
 
 class AbstractPaperFetcher(ABC):
     """
-    Abstract base class for fetching academic papers. Provides common
-    functionality like scheduling, data deduplication, and saving/loading data.
+    Abstract base class for fetching academic papers. Provides common functionality such as:
+    - Scheduling fetch operations
+    - Deduplication of fetched data
+    - Saving and loading data to and from a JSON file
+
+    Attributes:
+        results_dir (str): Directory where results are stored.
+        json_file_path (str): Path to the JSON file storing paper data.
+        cache_enabled (bool): Whether to cache fetched data in memory.
+        paper_ids (set): Set of paper identifiers to ensure deduplication.
+        cache (list): Cache for storing paper data if caching is enabled.
     """
 
-    def __init__(self, json_file_path='papers.json'):
-        self.json_file_path = json_file_path
-        # Load IDs for deduplication
-        self.paper_ids = set(self._load_existing_ids())
+    def __init__(self, json_file_name='papers.json', cache_enabled=True):
+        self.results_dir = "results"
+        os.makedirs(self.results_dir, exist_ok=True)
+        self.json_file_path = os.path.join(self.results_dir, json_file_name)
+        self.cache_enabled = cache_enabled
+        self.paper_ids = self._load_existing_ids()
+        self.cache = self._load_existing_data() if cache_enabled else []
 
     def _random_delay(self, min_delay=5, max_delay=10):
-        """Introduces a random delay to avoid being flagged as a bot."""
+        """Pauses execution for a random interval within a specified range."""
         time.sleep(random.uniform(min_delay, max_delay))
 
     def _load_existing_data(self):
-        """Load existing JSON data from file or return an empty list."""
+        """Loads existing data from the JSON file, if available, ensuring file locking."""
         if os.path.exists(self.json_file_path):
-            with open(self.json_file_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
+            with FileLock(f"{self.json_file_path}.lock"):
+                with open(self.json_file_path, 'r', encoding='utf-8') as f:
+                    return json.load(f)
         return []
 
     def _load_existing_ids(self):
-        """Load unique identifiers (DOI/URL) for deduplication from existing papers."""
-        existing_data = self._load_existing_data()
-        return {paper.get('doi') or paper.get('url') for paper in existing_data if paper.get('doi') or paper.get('url')}
+        """Extracts and returns a set of unique identifiers (DOI or URL) from existing data."""
+        return {paper.get('doi') or paper.get('url') for paper in self._load_existing_data() if paper.get('doi') or paper.get('url')}
 
     def _save_to_json(self, data):
-        """Append new papers to JSON file and update the deduplication set."""
-        existing_data = self._load_existing_data()
-        existing_data.extend(data)
+        """
+        Saves provided data to a JSON file, ensuring file locking.
+        
+        Args:
+            data (list): List of papers to be saved. Each paper should have unique identifiers for deduplication.
+        """
+        if self.cache_enabled:
+            self.cache.extend(data)
+            data_to_write = self.cache
+        else:
+            existing_data = self._load_existing_data()
+            existing_data.extend(data)
+            data_to_write = existing_data
 
-        self.paper_ids.update(paper.get('doi') or paper.get('url')
-                              for paper in data)
+        self.paper_ids.update(paper.get('doi') or paper.get('url') for paper in data)
 
-        with open(self.json_file_path, 'w', encoding='utf-8') as f:
-            json.dump(existing_data, f, ensure_ascii=False, indent=4)
+        with FileLock(f"{self.json_file_path}.lock"):
+            with open(self.json_file_path, 'w', encoding='utf-8') as f:
+                json.dump(data_to_write, f, ensure_ascii=False, indent=4)
 
         logging.info(f"Saved {len(data)} papers to {self.json_file_path}")
 
     def fetch_by_keywords(self, search_params=None, max_results=10):
         """
-        Fetch papers based on specified search conditions and save to JSON file.
-
+        Fetches papers based on search parameters, filters out duplicates, and saves new papers.
+        
         Args:
-            search_params (dict): Search conditions (keywords, authors, etc.)
-            max_results (int): Maximum number of results to fetch
+            search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
+            max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
+
+        Returns:
+            int: Number of newly saved papers.
         """
-        if search_params is None:
-            logging.info("Fetching the latest uploaded papers...")
-        else:
-            logging.info(
-                f"Fetching papers matching search conditions: {search_params}")
+        logging.info("Fetching papers with parameters..." if search_params else "Fetching latest papers...")
 
         papers = self.fetch_papers(search_params, max_results)
-
-        # Deduplicate and save new papers
-        new_papers = [paper for paper in papers if paper.get(
-            'doi') not in self.paper_ids and paper.get('url') not in self.paper_ids]
+        new_papers = [paper for paper in papers if paper.get('doi') not in self.paper_ids and paper.get('url') not in self.paper_ids]
 
         if new_papers:
             self._save_to_json(new_papers)
+            return len(new_papers)
         else:
             logging.info("No new papers found.")
+            return 0
 
-    def schedule_task(self, search_params, interval_minutes=10, max_results=10):
+    def run(self, search_params=None, max_results=10):
         """
-        Schedule a task to fetch papers at regular intervals.
-
+        Main entry point for running the paper fetch operation. 
+        Provides success or failure status codes for external monitoring.
+        
         Args:
-            search_params (dict): Search conditions (keywords, authors, etc.)
-            interval_minutes (int): Interval in minutes
-            max_results (int): Maximum number of results to fetch per run
+            search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
+            max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
         """
-        schedule.every(interval_minutes).minutes.do(
-            self.fetch_by_keywords, search_params=search_params, max_results=max_results)
-        logging.info(
-            f"Scheduled paper fetching every {interval_minutes} minutes. Conditions: {search_params}")
-        while True:
-            schedule.run_pending()
-            time.sleep(1)
-
-    def schedule_daily_latest_task(self, time_str="06:00", max_results=10):
-        """
-        Schedule a task to fetch the latest papers daily at a specific time.
-
-        Args:
-            time_str (str): Time in HH:MM format
-            max_results (int): Maximum number of results to fetch
-        """
-        schedule.every().day.at(time_str).do(self.fetch_by_keywords,
-                                             search_params=None, max_results=max_results)
-        logging.info(f"Scheduled daily paper fetching at {time_str}")
-        while True:
-            schedule.run_pending()
-            time.sleep(1)
+        try:
+            saved_count = self.fetch_by_keywords(search_params, max_results)
+            logging.info("Fetch completed successfully.")
+            sys.exit(0 if saved_count > 0 else 1)
+        except Exception as e:
+            logging.error(f"An error occurred: {e}")
+            sys.exit(1)
 
     @abstractmethod
     def fetch_papers(self, search_params=None, max_results=10):
-        """Abstract method: Fetch papers based on search parameters. Must be implemented by subclasses."""
+        """
+        Abstract method to fetch papers based on search parameters. 
+        Must be implemented by subclasses.
+        
+        Args:
+            search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
+            max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
+        
+        Returns:
+            list: List of fetched papers.
+        """
         pass

@@ -12,4 +12,4 @@ if __name__ == "__main__":
         "journal": "Nature",
         "year": "2020"
     }
-    pm_fetcher.fetch_by_keywords(search_params_pm, max_results=3)
+    pm_fetcher.fetch_by_keywords(search_params_pm, max_results=15)
