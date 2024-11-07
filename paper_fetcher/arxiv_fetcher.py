@@ -12,8 +12,8 @@ class ArXivFetcher(AbstractPaperFetcher):
     Fetcher for ArXiv academic papers.
     """
 
-    def __init__(self, json_file_path='arxiv_res.json'):
-        super().__init__(json_file_path)
+    def __init__(self, json_file_name):
+        super().__init__(json_file_name)
 
     def fetch_papers(self, search_params=None, max_results=10):
         """Fetch papers from ArXiv based on search parameters."""

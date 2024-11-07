@@ -11,8 +11,8 @@ class GoogleScholarFetcher(AbstractPaperFetcher):
     Fetcher for Google Scholar academic papers.
     """
 
-    def __init__(self, json_file_path='gs_res.json'):
-        super().__init__(json_file_path)
+    def __init__(self, json_file_name):
+        super().__init__(json_file_name)
 
     def fetch_papers(self, search_params=None, max_results=10):
         """Fetch papers from Google Scholar based on search parameters."""

@@ -12,8 +12,8 @@ class PubMedFetcher(AbstractPaperFetcher):
     Fetcher for PubMed academic papers.
     """
 
-    def __init__(self, json_file_path='pm_res.json'):
-        super().__init__(json_file_path)
+    def __init__(self, json_file_name):
+        super().__init__(json_file_name)
 
     def fetch_papers(self, search_params=None, max_results=10):
         """Fetch papers from PubMed based on search parameters."""
