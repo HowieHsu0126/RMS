@@ -23,7 +23,7 @@ class AbstractPaperFetcher(ABC):
         cache (list): Cache for storing paper data if caching is enabled.
     """
 
-    def __init__(self, json_file_name='papers.json', cache_enabled=True):
+    def __init__(self, json_file_name, cache_enabled=True):
         self.results_dir = "results"
         os.makedirs(self.results_dir, exist_ok=True)
         self.json_file_path = os.path.join(self.results_dir, json_file_name)
@@ -96,12 +96,13 @@ class AbstractPaperFetcher(ABC):
             logging.info("No new papers found.")
             return 0
 
-    def run(self, search_params=None, max_results=10):
+    def run(self, json_file_name, search_params=None, max_results=10):
         """
         Main entry point for running the paper fetch operation. 
         Provides success or failure status codes for external monitoring.
 
         Args:
+            json_file_name (str): The name of the JSON file to save the fetched papers.
             search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
             max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
         """
