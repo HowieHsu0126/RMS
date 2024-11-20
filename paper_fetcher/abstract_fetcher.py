@@ -82,30 +82,7 @@ class AbstractPaperFetcher(ABC):
         self._save_to_json(papers)
         return len(papers)
 
-    def run(self, search_params=None, max_results=10):
-        """
-        Main entry point for running the paper fetch operation. 
-        Provides success or failure status codes for external monitoring.
-
-        Args:
-            json_file_name (str): The name of the JSON file to save the fetched papers.
-            search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
-            max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
-        """
-        try:
-            saved_count = self.fetch_by_keywords(search_params, max_results)
-            if saved_count > 0:
-                logging.info("Fetch completed successfully with new papers.")
-                sys.exit(0)  # Success, new papers saved
-            else:
-                logging.info(
-                    "Fetch completed successfully but no new papers found.")
-                sys.exit(1)  # No new papers found
-        except Exception as e:
-            logging.error(f"An error occurred: {e}")
-            sys.exit(2)  # Error occurred
-
-    def fetch_and_return_json(self, search_params=None, max_results=10):
+    def fetch_by_keywords_and_return_json(self, search_params=None, max_results=10):
         """
         Fetches papers based on search parameters and returns them in JSON format.
 
@@ -127,6 +104,43 @@ class AbstractPaperFetcher(ABC):
 
         # Return the papers in JSON format
         return json.dumps(papers, ensure_ascii=False, indent=4)
+    
+    def run(self, search_params=None, max_results=10, output_json=False):
+        """
+        Main entry point for running the paper fetch operation. 
+        Provides success or failure status codes for external monitoring.
+        Optionally returns the fetched papers in JSON format.
+
+        Args:
+            search_params (dict, optional): Search conditions for fetching papers. Defaults to None.
+            max_results (int, optional): Maximum number of papers to fetch. Defaults to 10.
+            output_json (bool, optional): If True, returns fetched papers as JSON instead of saving to file.
+
+        Returns:
+            str (optional): JSON-formatted string containing fetched papers (if output_json is True).
+        """
+        try:
+            if output_json:
+                result_json = self.fetch_and_return_json(search_params, max_results)
+                fetched_count = len(json.loads(result_json))
+                if fetched_count > 0:
+                    logging.info(f"Fetched and returned {fetched_count} papers in JSON format.")
+                    sys.exit(0)  # Success, JSON returned
+                else:
+                    logging.info("Fetch completed successfully but no papers found.")
+                    sys.exit(1)  # No new papers found
+            else:
+                saved_count = self.fetch_by_keywords(search_params, max_results)
+                if saved_count > 0:
+                    logging.info("Fetch completed successfully with new papers.")
+                    sys.exit(0)  # Success, new papers saved
+                else:
+                    logging.info("Fetch completed successfully but no new papers found.")
+                    sys.exit(1)  # No new papers found
+        except Exception as e:
+            logging.error(f"An error occurred: {e}")
+            sys.exit(2)  # Error occurred
+
 
     @abstractmethod
     def fetch_papers(self, search_params=None, max_results=10):
