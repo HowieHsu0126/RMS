@@ -70,7 +70,7 @@ def main():
 
     if args.output_json:
         # Fetch papers and print JSON to console
-        result_json = pm_fetcher.fetch_and_return_json(
+        result_json = pm_fetcher.fetch_by_keywords_and_return_json(
             search_params=search_params_pm, max_results=args.max_results
         )
         print(result_json)
