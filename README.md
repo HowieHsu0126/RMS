@@ -8,20 +8,140 @@
 
 ## <svg t="1730393529609" class="icon" viewBox="0 0 1107 1024" version="1.1" xmlns="http://www.w3.org/2000/svg" p-id="3673" width="50" height="50"><path d="M600.637813 923.699317l-265.038724 53.940774 26.533029-96.218679L404.701595 728.929385l372.628701-373.211845v-291.571754A58.314351 58.314351 0 0 0 723.681093 0h-107.881549v87.471526a23.034169 23.034169 0 1 1-46.068337 0V0h-153.949886v87.471526a23.034169 23.034169 0 0 1-23.034168 23.034169 23.034169 23.034169 0 0 1-23.034169-23.034169V0H215.471526v87.471526a23.034169 23.034169 0 1 1-46.068337 0V0h-107.881549A66.186788 66.186788 0 0 0 0 61.52164V962.186788a66.186788 66.186788 0 0 0 61.52164 61.52164h654.578588A66.186788 66.186788 0 0 0 777.621868 962.186788v-215.763098zM135.872437 230.633257h469.430524a20.410023 20.410023 0 0 1 23.034169 23.034169 20.410023 20.410023 0 0 1-23.034169 23.034169H135.872437a20.410023 20.410023 0 0 1-23.034168-23.034169 20.410023 20.410023 0 0 1 23.034168-23.034169z m0 169.403189h469.430524a20.410023 20.410023 0 0 1 23.034169 23.034169 20.410023 20.410023 0 0 1-23.034169 23.034169H135.872437a20.410023 20.410023 0 0 1-23.034168-23.034169 20.410023 20.410023 0 0 1 23.034168-23.034169z m-23.034168 207.890661a20.410023 20.410023 0 0 1 23.034168-23.034169h269.412301a20.410023 20.410023 0 0 1 23.034169 23.034169 24.492027 24.492027 0 0 1-23.034169 23.034169H135.872437a20.410023 20.410023 0 0 1-23.32574-23.325741z" fill="#F9D65D" p-id="3674"></path><path d="M600.929385 923.699317l-265.330296 53.649202 69.102506-249.876993 196.22779 196.227791z" fill="#E0B873" p-id="3675"></path><path d="M439.981777 956.355353l-104.382688 21.284738 27.116173-98.259681a160.072893 160.072893 0 0 0 30.615034 47.817768 165.612756 165.612756 0 0 0 46.651481 29.157175z" fill="#4D4D4D" p-id="3676"></path><path d="M404.614123 727.850569L910.870159 221.390433l196.111162 196.052847-506.256036 506.460137z" fill="#F73434" p-id="3677"></path></svg> 功能更新日志
 
+### 2024-11-20
+
+* **新增 `fetch_and_return_json` 方法**：
+  * `fetch_and_return_json` 是一个专门为即时返回 JSON 格式数据而设计的接口，适合需要动态获取数据并进一步处理的场景。
+  * 方法功能：
+    * 根据指定的搜索条件抓取论文数据。
+    * 将抓取到的论文保存到文件，同时直接返回 JSON 格式的结果字符串。
+    * 如果抓取失败，返回空的 JSON 数组（`[]`）。
+
+  * **方法使用示例**：
+
+     ```python
+     class MyPaperFetcher(AbstractPaperFetcher):
+         def fetch_papers(self, search_params=None, max_results=10):
+             # 示例实现，返回伪造的数据
+             return [
+                 {"doi": "10.1234/example1", "title": "Sample Paper 1"},
+                 {"doi": "10.1234/example2", "title": "Sample Paper 2"}
+             ]
+
+     fetcher = MyPaperFetcher(json_file_name="test_papers.json")
+     result_json = fetcher.fetch_and_return_json(
+         search_params={"keyword": "AI", "author": "John Doe"},
+         max_results=5
+     )
+     print(result_json)
+     ```
+
+  * **输出结果示例**：
+
+     ```json
+     [
+         {
+             "doi": "10.1234/example1",
+             "title": "Sample Paper 1"
+         },
+         {
+             "doi": "10.1234/example2",
+             "title": "Sample Paper 2"
+         }
+     ]
+     ```
+
+* **系统退出状态码增强**：
+  * `main.py` 增加了明确的系统退出状态码，用于外部程序判断抓取结果：
+    * `0`：抓取成功并保存了新论文。
+    * `1`：抓取成功但未保存新论文（无新数据）。
+    * `2`：抓取过程中出现错误。
+  * 退出状态码提供了更灵活的外部调用支持，适合集成到其他任务调度系统或自动化脚本中。
+
+* **新增 `test.sh` 脚本功能**
+`test.sh` 是针对 Paper Fetcher 项目的自动化测试脚本，用于验证各功能模块的正确性与稳定性。新版本的 `test.sh` 脚本进行了以下更新：
+
+  1. **动态生成唯一文件名**：
+     * 每次测试中，抓取结果的 JSON 文件名基于时间戳生成，确保每次运行不会覆盖之前的结果。
+     * 文件名格式：`test_papers_<timestamp>.json`。
+
+  2. **新增 `fetch_and_return_json` 方法的测试**：
+     * 测试即时返回 JSON 格式结果的功能。
+     * 验证抓取结果是否正确写入文件，同时返回的 JSON 数据是否符合预期。
+
+  3. **全面的测试用例覆盖**：
+     * 覆盖多种组合条件（如关键词、作者、期刊、年份等）。
+     * 增加对 `--output_json` 和即时返回功能的验证。
+
+  4. **退出码处理优化**：
+     * 脚本捕获 `main.py` 的退出状态码，分别处理：
+       * `0`：抓取成功且有新论文。
+       * `1`：抓取成功但无新论文。
+       * `2`：抓取过程中出现错误。
+     * 每个测试的状态以日志形式输出，确保脚本在部分测试失败时仍继续运行。
+
+---
+
+#### **`test.sh` 功能示例**
+
+**动态测试用例：**
+
+```bash
+# 自动生成文件名并运行测试
+run_test_case "Test 1: Default parameters" \
+    "python main.py --json_file_name $(generate_json_file_name) --keyword '$DEFAULT_KEYWORD' --max_results $MAX_RESULTS"
+
+run_test_case "Test 11: Fetch and return JSON" \
+    "python main.py --keyword '$DEFAULT_KEYWORD' --max_results $MAX_RESULTS --output_json"
+```
+
+**完整输出日志：**
+
+```plaintext
+==============================
+Test 1: Default parameters
+==============================
+
+2024-11-20 17:23:19,698 - INFO - Fetching papers with parameters...
+2024-11-20 17:23:26,615 - INFO - Saved 5 papers to results/test_papers_20241120172319.json
+2024-11-20 17:23:26,616 - INFO - Fetch completed successfully with new papers.
+Test passed: New papers were fetched and saved.
+
+==============================
+Test 11: Fetch and return JSON
+==============================
+
+2024-11-20 17:23:28,123 - INFO - Fetching papers with parameters for JSON output...
+2024-11-20 17:23:29,456 - INFO - Saved 5 papers to results/test_papers_20241120172328.json
+[
+    {
+        "doi": "10.1234/example1",
+        "title": "Sample Paper 1"
+    },
+    {
+        "doi": "10.1234/example2",
+        "title": "Sample Paper 2"
+    }
+]
+Test passed: Fetched JSON returned and saved correctly.
+```
+
 ### 2024-11-07
 
 * **唯一文件名生成**: 引入了命令行参数解析器 (`argparse`)，使得用户在运行脚本时可以直接传递查询条件和保存结果的文件名。
   * 参数说明：
-    - `--json_file_name`：用于指定保存查询结果的 JSON 文件名。**默认生成一个基于当前时间戳的文件名，以确保唯一性，避免多个调用者间的冲突**。
-    - `--keyword`：用于指定搜索关键词，默认为 "cancer"。
-    - `--author`：用于指定搜索的作者名。
-    - `--journal`：用于指定搜索的期刊名称。
-    - `--year`：用于指定搜索的出版年份。
-    - `--max_results`：用于指定最大检索结果数，默认为 10。
+    * `--json_file_name`：用于指定保存查询结果的 JSON 文件名。**默认生成一个基于当前时间戳的文件名，以确保唯一性，避免多个调用者间的冲突**。
+    * `--keyword`：用于指定搜索关键词，默认为 "cancer"。
+    * `--author`：用于指定搜索的作者名。
+    * `--journal`：用于指定搜索的期刊名称。
+    * `--year`：用于指定搜索的出版年份。
+    * `--max_results`：用于指定最大检索结果数，默认为 10。
   * 使用示例：
+
   ```sh
   python main.py --json_file_name results.json --keyword cancer --author "John Doe" --journal Nature --year 2020 --max_results 10
   ```
+
 * 结果文件名默认使用时间戳 (`papers_<timestamp>.json`) 生成，确保每次运行得到唯一的文件名，适用于多用户并行查询场景。
   * 用户也可以通过命令行参数 `--json_file_name` 自定义文件名。
 * 重构为 main() 函数：
