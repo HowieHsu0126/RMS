@@ -1,8 +1,6 @@
-# paper_fetcher/google_scholar_fetcher.py
+from scholarly import scholarly, ProxyGenerator
 import logging
-
-from scholarly import scholarly
-
+import time
 from .abstract_fetcher import AbstractPaperFetcher
 
 
@@ -13,6 +11,8 @@ class GoogleScholarFetcher(AbstractPaperFetcher):
 
     def __init__(self, json_file_name):
         super().__init__(json_file_name)
+        self.max_retries = 5 
+        self.base_timeout = 10
 
     def fetch_papers(self, search_params=None, max_results=10):
         """Fetch papers from Google Scholar based on search parameters."""
@@ -21,13 +21,26 @@ class GoogleScholarFetcher(AbstractPaperFetcher):
             logging.warning("Invalid query, returning empty result.")
             return []
 
-        try:
-            search_query = scholarly.search_pubs(query)
-            papers = [self._parse_paper_info(paper) for paper in search_query][:max_results]
-            return papers
-        except Exception as e:
-            logging.error(f"Error fetching from Google Scholar: {str(e)}")
-            return []
+        retry_count = 0
+        timeout = self.base_timeout
+
+        while retry_count < self.max_retries:
+            try:
+                search_query = scholarly.search_pubs(query)
+                papers = [self._parse_paper_info(paper) for paper in search_query][:max_results]
+                return papers
+            except Exception as e:
+                retry_count += 1
+                logging.error(f"Attempt {retry_count} failed: {e}")
+                if retry_count < self.max_retries:
+                    logging.info(f"Retrying in {timeout} seconds...")
+                    time.sleep(timeout)
+                    timeout *= 2 
+                else:
+                    logging.error(f"Giving up after {retry_count} attempts.")
+                    break
+
+        return []
 
     def _build_query(self, search_params):
         """Helper to construct the search query string."""
@@ -41,6 +54,7 @@ class GoogleScholarFetcher(AbstractPaperFetcher):
         scholarly.fill(paper)
         bib = paper.get('bib', {})
         return {
+            "issn": bib.get('issn', 'N/A'),
             "title": bib.get('title', 'N/A'),
             "author": ', '.join(bib.get('author', [])),
             "abstract": bib.get('abstract', 'N/A'),

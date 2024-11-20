@@ -49,6 +49,7 @@ class PubMedFetcher(AbstractPaperFetcher):
         """Parse XML content from PubMed and extract article information."""
         root = ET.fromstring(xml_content)
         return {
+            "issn": root.findtext(".//ISSN", "N/A"),
             "title": root.findtext(".//ArticleTitle", "N/A"),
             "authors": ', '.join(f"{author.findtext('ForeName', 'N/A')} {author.findtext('LastName', 'N/A')}" for author in root.findall(".//Author")),
             "abstract": root.findtext(".//Abstract/AbstractText", "N/A"),

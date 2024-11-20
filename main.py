@@ -1,9 +1,11 @@
-# main.py
-from paper_fetcher.pubmed_fetcher import PubMedFetcher
-from paper_fetcher.utils import setup_logging
-import time
 import argparse
 import json
+import time
+
+from paper_fetcher.arxiv_fetcher import ArXivFetcher
+from paper_fetcher.google_scholar_fetcher import GoogleScholarFetcher
+from paper_fetcher.pubmed_fetcher import PubMedFetcher
+from paper_fetcher.utils import setup_logging
 
 
 def main():
@@ -14,6 +16,13 @@ def main():
         description="Fetch academic papers and optionally save or display results in JSON format."
     )
     parser.add_argument(
+        "--platform",
+        type=str,
+        default="pubmed",
+        choices=["pubmed", "google_scholar"],
+        help="The platform to fetch papers from. Options: 'pubmed', 'arxiv', 'google_scholar'. Default is 'pubmed'.",
+    )
+    parser.add_argument(
         "--json_file_name",
         type=str,
         default=f"papers_{int(time.time())}.json",
@@ -22,7 +31,7 @@ def main():
     parser.add_argument(
         "--keyword",
         type=str,
-        default="cancer",
+        default="machine learning",
         help="Keyword to search for papers.",
     )
     parser.add_argument(
@@ -57,11 +66,18 @@ def main():
 
     args = parser.parse_args()
 
-    # Create PubMedFetcher instance with provided JSON file name
-    pm_fetcher = PubMedFetcher(json_file_name=args.json_file_name)
+    # Select fetcher based on platform
+    if args.platform == "pubmed":
+        fetcher = PubMedFetcher(json_file_name=args.json_file_name)
+    # elif args.platform == "arxiv":
+    #     fetcher = ArXivFetcher(json_file_name=args.json_file_name)
+    elif args.platform == "google_scholar":
+        fetcher = GoogleScholarFetcher(json_file_name=args.json_file_name)
+    else:
+        raise ValueError(f"Unsupported platform: {args.platform}")
 
     # Set search parameters from command line arguments
-    search_params_pm = {
+    search_params = {
         "keyword": args.keyword,
         "author": args.author,
         "journal": args.journal,
@@ -70,14 +86,14 @@ def main():
 
     if args.output_json:
         # Fetch papers and print JSON to console
-        result_json = pm_fetcher.fetch_by_keywords_and_return_json(
-            search_params=search_params_pm, max_results=args.max_results
+        result_json = fetcher.fetch_by_keywords_and_return_json(
+            search_params=search_params, max_results=args.max_results
         )
         print(result_json)
     else:
         # Fetch papers and save to file
-        pm_fetcher.run(
-            search_params_pm,
+        fetcher.run(
+            search_params=search_params,
             max_results=args.max_results,
         )
 
