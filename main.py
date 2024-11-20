@@ -19,7 +19,7 @@ def main():
         "--platform",
         type=str,
         default="pubmed",
-        choices=["pubmed", "google_scholar"],
+        choices=["pubmed"],
         help="The platform to fetch papers from. Options: 'pubmed', 'arxiv', 'google_scholar'. Default is 'pubmed'.",
     )
     parser.add_argument(
@@ -69,8 +69,8 @@ def main():
     # Select fetcher based on platform
     if args.platform == "pubmed":
         fetcher = PubMedFetcher(json_file_name=args.json_file_name)
-    # elif args.platform == "arxiv":
-    #     fetcher = ArXivFetcher(json_file_name=args.json_file_name)
+    elif args.platform == "arxiv":
+        fetcher = ArXivFetcher(json_file_name=args.json_file_name)
     elif args.platform == "google_scholar":
         fetcher = GoogleScholarFetcher(json_file_name=args.json_file_name)
     else:
