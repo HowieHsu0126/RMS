@@ -3,6 +3,7 @@ import json
 import time
 
 from paper_fetcher.arxiv_fetcher import ArXivFetcher
+from paper_fetcher.crossref_fetcher import CrossRefFetcher
 from paper_fetcher.google_scholar_fetcher import GoogleScholarFetcher
 from paper_fetcher.pubmed_fetcher import PubMedFetcher
 from paper_fetcher.utils import setup_logging
@@ -19,8 +20,12 @@ def main():
         "--platform",
         type=str,
         default="pubmed",
-        choices=["pubmed"],
-        help="The platform to fetch papers from. Options: 'pubmed', 'arxiv', 'google_scholar'. Default is 'pubmed'.",
+        choices=["pubmed", "arxiv", "google_scholar",
+                 "crossref", ],
+        help=(
+            "The platform to fetch papers from. Options: 'pubmed', 'arxiv', 'google_scholar', "
+            "'crossref'. Default is 'pubmed'."
+        ),
     )
     parser.add_argument(
         "--json_file_name",
@@ -55,7 +60,7 @@ def main():
     parser.add_argument(
         "--max_results",
         type=int,
-        default=10,
+        default=2,
         help="Maximum number of papers to fetch.",
     )
     parser.add_argument(
@@ -73,6 +78,8 @@ def main():
         fetcher = ArXivFetcher(json_file_name=args.json_file_name)
     elif args.platform == "google_scholar":
         fetcher = GoogleScholarFetcher(json_file_name=args.json_file_name)
+    elif args.platform == "crossref":
+        fetcher = CrossRefFetcher(json_file_name=args.json_file_name)
     else:
         raise ValueError(f"Unsupported platform: {args.platform}")
 
